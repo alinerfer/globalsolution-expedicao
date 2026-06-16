@@ -9,7 +9,29 @@
   <body class="h-full bg-slate-50 text-slate-800">
     <nav class="bg-slate-900 text-white shadow">
       <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        <a href="/" class="text-lg font-semibold tracking-tight">Expedição</a>
+        <div class="flex items-center gap-6">
+          <a href="/" class="text-lg font-semibold tracking-tight">Expedição</a>
+          {% if usuario %}
+          <div class="flex items-center gap-4 text-sm">
+            <a href="/entregadores" class="text-slate-300 hover:text-white">
+              Entregadores
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% if usuario %}
+        <div class="flex items-center gap-3 text-sm">
+          <span class="text-slate-300">{{ usuario.nome }}</span>
+          <form method="post" action="/logout">
+            <button
+              type="submit"
+              class="rounded bg-slate-700 px-3 py-1 hover:bg-slate-600"
+            >
+              Sair
+            </button>
+          </form>
+        </div>
+        {% endif %}
       </div>
     </nav>
     <main class="mx-auto max-w-6xl px-4 py-6">

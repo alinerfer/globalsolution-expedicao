@@ -23,6 +23,7 @@ export class SessionGuard implements CanActivate {
     }
 
     (req as Request & { usuario: typeof usuario }).usuario = usuario;
+    res.locals.usuario = usuario;
     return true;
   }
 }

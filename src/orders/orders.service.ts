@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
 import { OrderStatus } from './enums/order-status.enum';
@@ -68,6 +68,16 @@ export class OrdersService {
     return this.ordersRepository.findOne({
       where: { id },
       relations: { itens: true, entregador: true },
+    });
+  }
+
+  listarPorEntregador(
+    entregadorId: number,
+    statuses: OrderStatus[],
+  ): Promise<Order[]> {
+    return this.ordersRepository.find({
+      where: { entregadorId, status: In(statuses) },
+      order: { createdAt: 'ASC' },
     });
   }
 

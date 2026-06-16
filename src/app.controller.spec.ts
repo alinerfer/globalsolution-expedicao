@@ -14,9 +14,9 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('home', () => {
+    it('retorna o título da página inicial', () => {
+      expect(appController.getHome()).toEqual({ titulo: 'Expedição' });
     });
   });
 });

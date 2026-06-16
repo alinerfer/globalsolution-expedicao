@@ -51,4 +51,22 @@ export class UsersService {
     });
     return this.usersRepository.save(user);
   }
+
+  async atualizar(
+    id: number,
+    dados: { nome: string; email: string },
+  ): Promise<void> {
+    await this.usersRepository.update(id, {
+      nome: dados.nome,
+      email: dados.email,
+    });
+  }
+
+  async alternarAtivo(id: number): Promise<void> {
+    const usuario = await this.findById(id);
+    if (!usuario) {
+      return;
+    }
+    await this.usersRepository.update(id, { ativo: !usuario.ativo });
+  }
 }

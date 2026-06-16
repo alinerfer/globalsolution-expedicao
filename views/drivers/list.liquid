@@ -15,6 +15,10 @@
 <div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
   Entregador cadastrado com sucesso.
 </div>
+{% elsif atualizado %}
+<div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+  Entregador atualizado com sucesso.
+</div>
 {% endif %}
 
 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
@@ -24,6 +28,7 @@
         <th class="px-4 py-2 text-left font-medium">Nome</th>
         <th class="px-4 py-2 text-left font-medium">E-mail</th>
         <th class="px-4 py-2 text-left font-medium">Situação</th>
+        <th class="px-4 py-2 text-right font-medium">Ações</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-100">
@@ -42,10 +47,28 @@
           </span>
           {% endif %}
         </td>
+        <td class="px-4 py-3 text-right">
+          <div class="inline-flex items-center gap-2">
+            <a
+              href="/entregadores/{{ entregador.id }}/editar"
+              class="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+            >
+              Editar
+            </a>
+            <form method="post" action="/entregadores/{{ entregador.id }}/desativar">
+              <button
+                type="submit"
+                class="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+              >
+                {% if entregador.ativo %}Desativar{% else %}Ativar{% endif %}
+              </button>
+            </form>
+          </div>
+        </td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="3" class="px-4 py-6 text-center text-slate-500">
+        <td colspan="4" class="px-4 py-6 text-center text-slate-500">
           Nenhum entregador cadastrado.
         </td>
       </tr>

@@ -83,6 +83,26 @@ export class ApiOrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: Request,
   ) {
+    return this.transicionarComoEntregador(
+      id,
+      req,
+      OrderStatus.SAIU_PARA_ENTREGA,
+    );
+  }
+
+  @Post(':id/deliver')
+  async deliver(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request,
+  ) {
+    return this.transicionarComoEntregador(id, req, OrderStatus.ENTREGUE);
+  }
+
+  private async transicionarComoEntregador(
+    id: number,
+    req: Request,
+    novoStatus: OrderStatus,
+  ) {
     const usuario = (req as Request & { usuario: User }).usuario;
     const pedido = await this.ordersService.findById(id);
     if (!pedido) {
@@ -91,10 +111,7 @@ export class ApiOrdersController {
     if (pedido.entregadorId !== usuario.id) {
       throw new ForbiddenException('Pedido não pertence a você.');
     }
-    const atualizado = await this.ordersService.transicionar(
-      id,
-      OrderStatus.SAIU_PARA_ENTREGA,
-    );
+    const atualizado = await this.ordersService.transicionar(id, novoStatus);
     return { id: atualizado.id, status: atualizado.status };
   }
 }

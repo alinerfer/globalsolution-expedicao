@@ -22,6 +22,11 @@ export class WebAuthController {
     return { titulo: 'Entrar', erro: erro === '1' };
   }
 
+  @Post('logout')
+  fazerLogout(@Req() req: Request, @Res() res: Response) {
+    req.session.destroy(() => res.redirect('/login'));
+  }
+
   @Post('login')
   async processarLogin(
     @Body() body: { email?: string; senha?: string },

@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { SessionGuard } from '../../auth/web/session.guard';
+import { UserRole } from '../../users/enums/user-role.enum';
+import { UsersService } from '../../users/users.service';
 import {
   ORDER_STATUS_LABEL,
   OrderStatus,
@@ -31,7 +33,10 @@ const COLUNAS_KANBAN: OrderStatus[] = [
 @Controller('pedidos')
 @UseGuards(SessionGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get()
   @Render('orders/kanban')
@@ -53,22 +58,36 @@ export class OrdersController {
 
   @Get(':id')
   @Render('orders/detail')
-  async detalhe(@Param('id', ParseIntPipe) id: number) {
+  async detalhe(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('erro') erro?: string,
+  ) {
     const pedido = await this.ordersService.findById(id);
     if (!pedido) {
       throw new NotFoundException('Pedido não encontrado.');
     }
+
+    const podeAtribuir = pedido.status === OrderStatus.PRONTO;
+    const entregadores = podeAtribuir
+      ? (await this.usersService.listarPorRole(UserRole.ENTREGADOR)).filter(
+          (e) => e.ativo,
+        )
+      : [];
+
     return {
       titulo: `Pedido #${pedido.id}`,
       pedido,
       statusLabel: ORDER_STATUS_LABEL[pedido.status],
       podePreparar: pedido.status === OrderStatus.PENDENTE,
       podeMarcarPronto: pedido.status === OrderStatus.EM_PREPARO,
+      podeAtribuir,
       podeCancelar: [
         OrderStatus.PENDENTE,
         OrderStatus.EM_PREPARO,
         OrderStatus.PRONTO,
       ].includes(pedido.status),
+      entregadores,
+      erro: erro ?? null,
     };
   }
 
@@ -96,6 +115,30 @@ export class OrdersController {
     @Res() res: Response,
   ) {
     await this.ordersService.transicionar(id, OrderStatus.CANCELADO);
+    return res.redirect(`/pedidos/${id}`);
+  }
+
+  @Post(':id/atribuir')
+  async atribuirEntregador(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { entregadorId?: string },
+    @Res() res: Response,
+  ) {
+    const entregadorId = parseInt(body.entregadorId ?? '', 10);
+    if (!Number.isFinite(entregadorId)) {
+      return res.redirect(`/pedidos/${id}?erro=entregador`);
+    }
+
+    const entregador = await this.usersService.findById(entregadorId);
+    if (
+      !entregador ||
+      !entregador.ativo ||
+      entregador.role !== UserRole.ENTREGADOR
+    ) {
+      return res.redirect(`/pedidos/${id}?erro=entregador`);
+    }
+
+    await this.ordersService.atribuirEntregador(id, entregadorId);
     return res.redirect(`/pedidos/${id}`);
   }
 

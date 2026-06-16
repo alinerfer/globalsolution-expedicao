@@ -129,6 +129,42 @@
       {% else %}
       <p class="text-sm text-slate-500">Nenhum entregador atribuído.</p>
       {% endif %}
+
+      {% if podeAtribuir %}
+      {% if erro == "entregador" %}
+      <div class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        Selecione um entregador ativo.
+      </div>
+      {% endif %}
+      <form method="post" action="/pedidos/{{ pedido.id }}/atribuir" class="mt-4 space-y-2">
+        <label for="entregadorId" class="block text-xs font-medium text-slate-700">
+          Atribuir a
+        </label>
+        <select
+          id="entregadorId"
+          name="entregadorId"
+          required
+          class="block w-full rounded border border-slate-300 px-2 py-1 text-sm"
+        >
+          <option value="">Selecione...</option>
+          {% for e in entregadores %}
+          <option value="{{ e.id }}">{{ e.nome }}</option>
+          {% endfor %}
+        </select>
+        <button
+          type="submit"
+          class="w-full rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        >
+          Atribuir e despachar
+        </button>
+        {% if entregadores.size == 0 %}
+        <p class="text-xs text-slate-500">
+          Cadastre um entregador ativo em
+          <a href="/entregadores" class="underline">Entregadores</a>.
+        </p>
+        {% endif %}
+      </form>
+      {% endif %}
     </section>
   </aside>
 </div>

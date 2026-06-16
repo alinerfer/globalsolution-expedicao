@@ -62,7 +62,41 @@ export class OrdersController {
       titulo: `Pedido #${pedido.id}`,
       pedido,
       statusLabel: ORDER_STATUS_LABEL[pedido.status],
+      podePreparar: pedido.status === OrderStatus.PENDENTE,
+      podeMarcarPronto: pedido.status === OrderStatus.EM_PREPARO,
+      podeCancelar: [
+        OrderStatus.PENDENTE,
+        OrderStatus.EM_PREPARO,
+        OrderStatus.PRONTO,
+      ].includes(pedido.status),
     };
+  }
+
+  @Post(':id/preparar')
+  async preparar(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    await this.ordersService.transicionar(id, OrderStatus.EM_PREPARO);
+    return res.redirect(`/pedidos/${id}`);
+  }
+
+  @Post(':id/pronto')
+  async marcarPronto(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    await this.ordersService.transicionar(id, OrderStatus.PRONTO);
+    return res.redirect(`/pedidos/${id}`);
+  }
+
+  @Post(':id/cancelar')
+  async cancelar(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    await this.ordersService.transicionar(id, OrderStatus.CANCELADO);
+    return res.redirect(`/pedidos/${id}`);
   }
 
   @Post()

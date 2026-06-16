@@ -15,6 +15,45 @@
   </span>
 </div>
 
+{% if podePreparar or podeMarcarPronto or podeCancelar %}
+<div class="mb-4 flex flex-wrap items-center gap-2">
+  {% if podePreparar %}
+  <form method="post" action="/pedidos/{{ pedido.id }}/preparar">
+    <button
+      type="submit"
+      class="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+    >
+      Iniciar preparo
+    </button>
+  </form>
+  {% endif %}
+  {% if podeMarcarPronto %}
+  <form method="post" action="/pedidos/{{ pedido.id }}/pronto">
+    <button
+      type="submit"
+      class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+    >
+      Marcar como pronto
+    </button>
+  </form>
+  {% endif %}
+  {% if podeCancelar %}
+  <form
+    method="post"
+    action="/pedidos/{{ pedido.id }}/cancelar"
+    onsubmit="return confirm('Cancelar este pedido?');"
+  >
+    <button
+      type="submit"
+      class="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+    >
+      Cancelar pedido
+    </button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="grid gap-4 lg:grid-cols-3">
   <section class="rounded-lg bg-white p-6 shadow-sm lg:col-span-2">
     <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">

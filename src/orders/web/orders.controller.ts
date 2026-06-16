@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { SessionGuard } from '../../auth/web/session.guard';
+import { LocationsService } from '../../locations/locations.service';
 import { UserRole } from '../../users/enums/user-role.enum';
 import { UsersService } from '../../users/users.service';
 import {
@@ -37,6 +38,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly usersService: UsersService,
+    private readonly locationsService: LocationsService,
   ) {}
 
   @Get()
@@ -117,6 +119,29 @@ export class OrdersController {
   ) {
     await this.ordersService.transicionar(id, OrderStatus.CANCELADO);
     return res.redirect(`/pedidos/${id}`);
+  }
+
+  @Get(':id/localizacao')
+  async localizacao(@Param('id', ParseIntPipe) id: number) {
+    const pedido = await this.ordersService.findById(id);
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    if (!pedido.entregadorId) {
+      return { temPosicao: false };
+    }
+    const ultima = await this.locationsService.ultimaPorDriver(
+      pedido.entregadorId,
+    );
+    if (!ultima) {
+      return { temPosicao: false };
+    }
+    return {
+      temPosicao: true,
+      latitude: ultima.latitude,
+      longitude: ultima.longitude,
+      recordedAt: ultima.recordedAt,
+    };
   }
 
   @Post(':id/atribuir')

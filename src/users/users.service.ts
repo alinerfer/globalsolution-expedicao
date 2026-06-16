@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserRole } from './enums/user-role.enum';
+
+const SALT_ROUNDS = 10;
 
 @Injectable()
 export class UsersService {
@@ -10,6 +13,14 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {}
+
+  hashSenha(senha: string): Promise<string> {
+    return bcrypt.hash(senha, SALT_ROUNDS);
+  }
+
+  comparaSenha(senha: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(senha, hash);
+  }
 
   findById(id: number): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id } });

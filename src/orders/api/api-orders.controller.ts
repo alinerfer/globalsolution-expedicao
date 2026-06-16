@@ -1,4 +1,13 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/api/jwt-auth.guard';
 import { User } from '../../users/entities/user.entity';
@@ -30,5 +39,38 @@ export class ApiOrdersController {
       status: p.status,
       createdAt: p.createdAt,
     }));
+  }
+
+  @Get(':id')
+  async detalhe(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request,
+  ) {
+    const usuario = (req as Request & { usuario: User }).usuario;
+    const pedido = await this.ordersService.findById(id);
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    if (pedido.entregadorId !== usuario.id) {
+      throw new ForbiddenException('Pedido não pertence a você.');
+    }
+    return {
+      id: pedido.id,
+      clienteNome: pedido.clienteNome,
+      clienteTelefone: pedido.clienteTelefone,
+      enderecoEntrega: pedido.enderecoEntrega,
+      latitude: pedido.latitude,
+      longitude: pedido.longitude,
+      observacoes: pedido.observacoes,
+      valorTotal: pedido.valorTotal,
+      status: pedido.status,
+      itens: pedido.itens.map((i) => ({
+        id: i.id,
+        nome: i.nome,
+        quantidade: i.quantidade,
+        precoUnitario: i.precoUnitario,
+      })),
+      createdAt: pedido.createdAt,
+    };
   }
 }

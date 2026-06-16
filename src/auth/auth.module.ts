@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module';
+import { ApiAuthController } from './api/api-auth.controller';
 import { JwtAuthGuard } from './api/jwt-auth.guard';
 import { SessionGuard } from './web/session.guard';
 import { WebAuthController } from './web/web-auth.controller';
@@ -13,7 +14,7 @@ import { WebAuthController } from './web/web-auth.controller';
       signOptions: { expiresIn: '12h' },
     }),
   ],
-  controllers: [WebAuthController],
+  controllers: [WebAuthController, ApiAuthController],
   providers: [SessionGuard, JwtAuthGuard],
   exports: [SessionGuard, JwtAuthGuard, JwtModule],
 })

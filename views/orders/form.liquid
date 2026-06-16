@@ -1,0 +1,199 @@
+{% layout "layouts/main" %}
+
+{% block conteudo %}
+<div class="mx-auto max-w-3xl">
+  <h1 class="mb-4 text-2xl font-semibold text-slate-900">{{ titulo }}</h1>
+
+  {% if erro == "campos" %}
+  <div class="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    Preencha nome, telefone e endereço do cliente.
+  </div>
+  {% elsif erro == "itens" %}
+  <div class="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    Adicione ao menos um item com nome, quantidade e preço válidos.
+  </div>
+  {% endif %}
+
+  <form method="post" action="/pedidos" class="space-y-6">
+    <section class="rounded-lg bg-white p-6 shadow-sm">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
+        Cliente
+      </h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="clienteNome" class="block text-sm font-medium text-slate-700">
+            Nome
+          </label>
+          <input
+            id="clienteNome"
+            name="clienteNome"
+            type="text"
+            required
+            class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label for="clienteTelefone" class="block text-sm font-medium text-slate-700">
+            Telefone
+          </label>
+          <input
+            id="clienteTelefone"
+            name="clienteTelefone"
+            type="text"
+            required
+            placeholder="(11) 99999-0000"
+            class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-lg bg-white p-6 shadow-sm">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600">
+        Entrega
+      </h2>
+      <div class="space-y-4">
+        <div>
+          <label for="enderecoEntrega" class="block text-sm font-medium text-slate-700">
+            Endereço
+          </label>
+          <input
+            id="enderecoEntrega"
+            name="enderecoEntrega"
+            type="text"
+            required
+            placeholder="Rua, número, bairro, ponto de referência"
+            class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="latitude" class="block text-sm font-medium text-slate-700">
+              Latitude (opcional)
+            </label>
+            <input
+              id="latitude"
+              name="latitude"
+              type="text"
+              placeholder="-23.564"
+              class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label for="longitude" class="block text-sm font-medium text-slate-700">
+              Longitude (opcional)
+            </label>
+            <input
+              id="longitude"
+              name="longitude"
+              type="text"
+              placeholder="-46.652"
+              class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <div>
+          <label for="observacoes" class="block text-sm font-medium text-slate-700">
+            Observações
+          </label>
+          <textarea
+            id="observacoes"
+            name="observacoes"
+            rows="2"
+            class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+          ></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-lg bg-white p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-600">
+          Itens
+        </h2>
+        <button
+          type="button"
+          id="btnAdicionarItem"
+          class="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+        >
+          + Adicionar item
+        </button>
+      </div>
+
+      <div id="itens" class="space-y-2"></div>
+
+      <template id="tplItem">
+        <div class="grid grid-cols-12 items-center gap-2 rounded border border-slate-200 p-2">
+          <input
+            name="itensNome"
+            type="text"
+            placeholder="Item"
+            required
+            class="col-span-6 rounded border border-slate-300 px-2 py-1 text-sm"
+          />
+          <input
+            name="itensQuantidade"
+            type="number"
+            min="1"
+            value="1"
+            required
+            class="col-span-2 rounded border border-slate-300 px-2 py-1 text-sm"
+          />
+          <input
+            name="itensPrecoUnitario"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0,00"
+            required
+            class="col-span-3 rounded border border-slate-300 px-2 py-1 text-sm"
+          />
+          <button
+            type="button"
+            class="col-span-1 text-slate-500 hover:text-red-600"
+            data-remover
+          >
+            ✕
+          </button>
+        </div>
+      </template>
+    </section>
+
+    <div class="flex items-center justify-end gap-2">
+      <a
+        href="/pedidos"
+        class="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+      >
+        Cancelar
+      </a>
+      <button
+        type="submit"
+        class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+      >
+        Salvar pedido
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function () {
+    const containerItens = document.getElementById('itens');
+    const tpl = document.getElementById('tplItem');
+
+    function adicionarItem() {
+      const clone = tpl.content.firstElementChild.cloneNode(true);
+      clone.querySelector('[data-remover]').addEventListener('click', () => {
+        clone.remove();
+      });
+      containerItens.appendChild(clone);
+    }
+
+    document
+      .getElementById('btnAdicionarItem')
+      .addEventListener('click', adicionarItem);
+
+    adicionarItem();
+  })();
+</script>
+{% endblock %}

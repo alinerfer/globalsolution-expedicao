@@ -1,4 +1,15 @@
-import { Controller, Get, Render, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Render,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { SessionGuard } from '../../auth/web/session.guard';
 import {
   ORDER_STATUS_LABEL,
@@ -30,4 +41,99 @@ export class OrdersController {
     }));
     return { titulo: 'Pedidos', colunas };
   }
+
+  @Get('novo')
+  @Render('orders/form')
+  exibirNovo(@Query('erro') erro?: string) {
+    return { titulo: 'Novo pedido', erro: erro ?? null };
+  }
+
+  @Post()
+  async criar(
+    @Body()
+    body: {
+      clienteNome?: string;
+      clienteTelefone?: string;
+      enderecoEntrega?: string;
+      latitude?: string;
+      longitude?: string;
+      observacoes?: string;
+      itensNome?: string | string[];
+      itensQuantidade?: string | string[];
+      itensPrecoUnitario?: string | string[];
+    },
+    @Res() res: Response,
+  ) {
+    const clienteNome = (body.clienteNome ?? '').trim();
+    const clienteTelefone = (body.clienteTelefone ?? '').trim();
+    const enderecoEntrega = (body.enderecoEntrega ?? '').trim();
+    const observacoes = (body.observacoes ?? '').trim() || null;
+
+    if (!clienteNome || !clienteTelefone || !enderecoEntrega) {
+      return res.redirect('/pedidos/novo?erro=campos');
+    }
+
+    const latitude = parseOpcional(body.latitude);
+    const longitude = parseOpcional(body.longitude);
+
+    const nomes = toArray(body.itensNome);
+    const quantidades = toArray(body.itensQuantidade).map((v) =>
+      parseInt(v, 10),
+    );
+    const precos = toArray(body.itensPrecoUnitario).map((v) =>
+      parseFloat(v.replace(',', '.')),
+    );
+
+    const itens = nomes
+      .map((nome, i) => ({
+        nome: nome.trim(),
+        quantidade: quantidades[i],
+        precoUnitario: precos[i],
+      }))
+      .filter(
+        (i) =>
+          i.nome.length > 0 &&
+          Number.isFinite(i.quantidade) &&
+          i.quantidade > 0 &&
+          Number.isFinite(i.precoUnitario) &&
+          i.precoUnitario >= 0,
+      );
+
+    if (itens.length === 0) {
+      return res.redirect('/pedidos/novo?erro=itens');
+    }
+
+    try {
+      const pedido = await this.ordersService.criar({
+        clienteNome,
+        clienteTelefone,
+        enderecoEntrega,
+        latitude,
+        longitude,
+        observacoes,
+        itens,
+      });
+      return res.redirect(`/pedidos/${pedido.id}`);
+    } catch (e) {
+      if (e instanceof BadRequestException) {
+        return res.redirect('/pedidos/novo?erro=itens');
+      }
+      throw e;
+    }
+  }
+}
+
+function parseOpcional(valor: string | undefined): number | null {
+  if (!valor || valor.trim() === '') {
+    return null;
+  }
+  const n = parseFloat(valor.replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function toArray(valor: string | string[] | undefined): string[] {
+  if (!valor) {
+    return [];
+  }
+  return Array.isArray(valor) ? valor : [valor];
 }

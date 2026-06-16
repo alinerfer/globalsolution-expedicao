@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { OrderStatus } from '../enums/order-status.enum';
+import { OrderItem } from './order-item.entity';
 
 @Entity('orders')
 export class Order {
@@ -45,6 +47,12 @@ export class Order {
 
   @Column({ name: 'entregador_id', nullable: true })
   entregadorId: number | null;
+
+  @OneToMany(() => OrderItem, (item) => item.order, {
+    cascade: true,
+    eager: false,
+  })
+  itens: OrderItem[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -1,11 +1,10 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8" />
-    <title>{{ titulo }}</title>
-  </head>
-  <body>
-    <h1>{{ titulo }}</h1>
-    <p>Plataforma de controle de expedição de pedidos.</p>
-  </body>
-</html>
+{% layout "layouts/main" %}
+
+{% block conteudo %}
+<section class="rounded-lg bg-white p-6 shadow-sm">
+  <h1 class="text-2xl font-semibold text-slate-900">{{ titulo }}</h1>
+  <p class="mt-2 text-slate-600">
+    Plataforma de controle de expedição de pedidos.
+  </p>
+</section>
+{% endblock %}

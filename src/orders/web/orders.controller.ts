@@ -26,6 +26,7 @@ const COLUNAS_KANBAN: OrderStatus[] = [
   OrderStatus.PENDENTE,
   OrderStatus.EM_PREPARO,
   OrderStatus.PRONTO,
+  OrderStatus.ATRIBUIDO,
   OrderStatus.SAIU_PARA_ENTREGA,
   OrderStatus.ENTREGUE,
 ];

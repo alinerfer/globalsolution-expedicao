@@ -12,7 +12,11 @@ import { OrderStatus } from './enums/order-status.enum';
 const TRANSICOES_VALIDAS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.PENDENTE]: [OrderStatus.EM_PREPARO, OrderStatus.CANCELADO],
   [OrderStatus.EM_PREPARO]: [OrderStatus.PRONTO, OrderStatus.CANCELADO],
-  [OrderStatus.PRONTO]: [OrderStatus.SAIU_PARA_ENTREGA, OrderStatus.CANCELADO],
+  [OrderStatus.PRONTO]: [OrderStatus.ATRIBUIDO, OrderStatus.CANCELADO],
+  [OrderStatus.ATRIBUIDO]: [
+    OrderStatus.SAIU_PARA_ENTREGA,
+    OrderStatus.CANCELADO,
+  ],
   [OrderStatus.SAIU_PARA_ENTREGA]: [OrderStatus.ENTREGUE],
   [OrderStatus.ENTREGUE]: [],
   [OrderStatus.CANCELADO]: [],
@@ -54,6 +58,7 @@ export class OrdersService {
       [OrderStatus.PENDENTE]: [],
       [OrderStatus.EM_PREPARO]: [],
       [OrderStatus.PRONTO]: [],
+      [OrderStatus.ATRIBUIDO]: [],
       [OrderStatus.SAIU_PARA_ENTREGA]: [],
       [OrderStatus.ENTREGUE]: [],
       [OrderStatus.CANCELADO]: [],
@@ -140,7 +145,7 @@ export class OrdersService {
       );
     }
     pedido.entregadorId = entregadorId;
-    pedido.status = OrderStatus.SAIU_PARA_ENTREGA;
+    pedido.status = OrderStatus.ATRIBUIDO;
     return this.ordersRepository.save(pedido);
   }
 }

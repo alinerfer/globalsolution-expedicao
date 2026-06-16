@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -14,7 +15,10 @@ import { User } from '../../users/entities/user.entity';
 import { OrderStatus } from '../enums/order-status.enum';
 import { OrdersService } from '../orders.service';
 
-const STATUS_EM_ANDAMENTO = [OrderStatus.SAIU_PARA_ENTREGA];
+const STATUS_EM_ANDAMENTO = [
+  OrderStatus.ATRIBUIDO,
+  OrderStatus.SAIU_PARA_ENTREGA,
+];
 
 @Controller('api/orders')
 @UseGuards(JwtAuthGuard)
@@ -72,5 +76,25 @@ export class ApiOrdersController {
       })),
       createdAt: pedido.createdAt,
     };
+  }
+
+  @Post(':id/pickup')
+  async pickup(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request,
+  ) {
+    const usuario = (req as Request & { usuario: User }).usuario;
+    const pedido = await this.ordersService.findById(id);
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    if (pedido.entregadorId !== usuario.id) {
+      throw new ForbiddenException('Pedido não pertence a você.');
+    }
+    const atualizado = await this.ordersService.transicionar(
+      id,
+      OrderStatus.SAIU_PARA_ENTREGA,
+    );
+    return { id: atualizado.id, status: atualizado.status };
   }
 }

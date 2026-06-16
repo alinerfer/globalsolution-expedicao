@@ -1,15 +1,12 @@
-import { Controller, Get, Render, UseGuards } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { SessionGuard } from './auth/web/session.guard';
 
 @Controller()
 @UseGuards(SessionGuard)
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
   @Get()
-  @Render('home')
-  getHome() {
-    return { titulo: this.appService.getHello() };
+  raiz(@Res() res: Response) {
+    return res.redirect('/pedidos');
   }
 }

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UsersService } from './users/users.service';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { SessionGuard } from './auth/web/session.guard';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -8,15 +9,20 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        { provide: SessionGuard, useValue: { canActivate: () => true } },
+        { provide: UsersService, useValue: {} },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
-  describe('home', () => {
-    it('retorna o título da página inicial', () => {
-      expect(appController.getHome()).toEqual({ titulo: 'Expedição' });
+  describe('raiz', () => {
+    it('redireciona para /pedidos', () => {
+      const redirect = jest.fn();
+      appController.raiz({ redirect } as never);
+      expect(redirect).toHaveBeenCalledWith('/pedidos');
     });
   });
 });

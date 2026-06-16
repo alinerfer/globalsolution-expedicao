@@ -1,0 +1,96 @@
+{% layout "layouts/main" %}
+
+{% block conteudo %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <a href="/pedidos" class="text-sm text-slate-500 hover:underline">← Voltar</a>
+    <h1 class="mt-1 text-2xl font-semibold text-slate-900">
+      Pedido #{{ pedido.id }}
+    </h1>
+  </div>
+  <span
+    class="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-sm font-medium text-slate-800"
+  >
+    {{ statusLabel }}
+  </span>
+</div>
+
+<div class="grid gap-4 lg:grid-cols-3">
+  <section class="rounded-lg bg-white p-6 shadow-sm lg:col-span-2">
+    <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+      Itens
+    </h2>
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="text-slate-600">
+        <tr>
+          <th class="py-2 text-left font-medium">Item</th>
+          <th class="py-2 text-right font-medium">Qtd</th>
+          <th class="py-2 text-right font-medium">Unitário</th>
+          <th class="py-2 text-right font-medium">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for item in pedido.itens %}
+        <tr>
+          <td class="py-2 text-slate-900">{{ item.nome }}</td>
+          <td class="py-2 text-right text-slate-700">{{ item.quantidade }}</td>
+          <td class="py-2 text-right text-slate-700">
+            R$ {{ item.precoUnitario | round: 2 }}
+          </td>
+          <td class="py-2 text-right text-slate-900">
+            R$ {{ item.quantidade | times: item.precoUnitario | round: 2 }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="border-t border-slate-200">
+          <td colspan="3" class="py-2 text-right font-medium text-slate-700">
+            Total
+          </td>
+          <td class="py-2 text-right text-lg font-semibold text-slate-900">
+            R$ {{ pedido.valorTotal | round: 2 }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    {% if pedido.observacoes %}
+    <div class="mt-4 rounded border border-slate-200 bg-slate-50 p-3 text-sm">
+      <div class="mb-1 text-xs font-semibold uppercase text-slate-500">
+        Observações
+      </div>
+      {{ pedido.observacoes }}
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="space-y-4">
+    <section class="rounded-lg bg-white p-6 shadow-sm">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+        Cliente
+      </h2>
+      <p class="font-medium text-slate-900">{{ pedido.clienteNome }}</p>
+      <p class="text-sm text-slate-600">{{ pedido.clienteTelefone }}</p>
+      <p class="mt-3 text-sm text-slate-700">{{ pedido.enderecoEntrega }}</p>
+      {% if pedido.latitude and pedido.longitude %}
+      <p class="mt-1 text-xs text-slate-500">
+        {{ pedido.latitude }}, {{ pedido.longitude }}
+      </p>
+      {% endif %}
+    </section>
+
+    <section class="rounded-lg bg-white p-6 shadow-sm">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+        Entregador
+      </h2>
+      {% if pedido.entregador %}
+      <p class="font-medium text-slate-900">{{ pedido.entregador.nome }}</p>
+      <p class="text-sm text-slate-600">{{ pedido.entregador.email }}</p>
+      {% else %}
+      <p class="text-sm text-slate-500">Nenhum entregador atribuído.</p>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -3,6 +3,9 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
   Post,
   Query,
   Render,
@@ -46,6 +49,20 @@ export class OrdersController {
   @Render('orders/form')
   exibirNovo(@Query('erro') erro?: string) {
     return { titulo: 'Novo pedido', erro: erro ?? null };
+  }
+
+  @Get(':id')
+  @Render('orders/detail')
+  async detalhe(@Param('id', ParseIntPipe) id: number) {
+    const pedido = await this.ordersService.findById(id);
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    return {
+      titulo: `Pedido #${pedido.id}`,
+      pedido,
+      statusLabel: ORDER_STATUS_LABEL[pedido.status],
+    };
   }
 
   @Post()

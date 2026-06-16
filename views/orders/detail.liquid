@@ -104,6 +104,28 @@
     {% endif %}
   </section>
 
+  {% if mostraMapa %}
+  <section class="rounded-lg bg-white p-4 shadow-sm lg:col-span-2">
+    <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+      Mapa
+    </h2>
+    <div
+      id="mapa"
+      class="h-72 w-full rounded border border-slate-200"
+      data-pedido-id="{{ pedido.id }}"
+      data-acompanha="{% if acompanhaEntregador %}1{% else %}0{% endif %}"
+      data-tem-destino="{% if temDestino %}1{% else %}0{% endif %}"
+      data-destino-lat="{{ pedido.latitude }}"
+      data-destino-lng="{{ pedido.longitude }}"
+    ></div>
+    {% if acompanhaEntregador %}
+    <p id="ultimaAtualizacao" class="mt-2 text-xs text-slate-500">
+      Aguardando primeira posição do entregador...
+    </p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <aside class="space-y-4">
     <section class="rounded-lg bg-white p-6 shadow-sm">
       <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
@@ -168,4 +190,82 @@
     </section>
   </aside>
 </div>
+
+{% if mostraMapa %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+<script>
+  (function () {
+    const div = document.getElementById('mapa');
+    const pedidoId = div.dataset.pedidoId;
+    const acompanha = div.dataset.acompanha === '1';
+    const temDestino = div.dataset.temDestino === '1';
+    const destinoLat = parseFloat(div.dataset.destinoLat);
+    const destinoLng = parseFloat(div.dataset.destinoLng);
+
+    const centroInicial = temDestino
+      ? [destinoLat, destinoLng]
+      : [-23.55, -46.63];
+    const mapa = L.map('mapa').setView(centroInicial, temDestino ? 14 : 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap',
+    }).addTo(mapa);
+
+    if (temDestino) {
+      L.marker([destinoLat, destinoLng])
+        .addTo(mapa)
+        .bindPopup('Destino');
+    }
+
+    if (!acompanha) {
+      return;
+    }
+
+    const elInfo = document.getElementById('ultimaAtualizacao');
+    let markerEntregador = null;
+
+    async function atualizar() {
+      try {
+        const resp = await fetch('/pedidos/' + pedidoId + '/localizacao');
+        if (!resp.ok) return;
+        const dados = await resp.json();
+        if (!dados.temPosicao) return;
+
+        const ponto = [dados.latitude, dados.longitude];
+        if (markerEntregador) {
+          markerEntregador.setLatLng(ponto);
+        } else {
+          markerEntregador = L.marker(ponto)
+            .addTo(mapa)
+            .bindPopup('Entregador');
+          if (!temDestino) {
+            mapa.setView(ponto, 14);
+          }
+        }
+        if (elInfo) {
+          const data = new Date(dados.recordedAt);
+          elInfo.textContent =
+            'Última posição: ' + data.toLocaleTimeString('pt-BR');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    atualizar();
+    setInterval(atualizar, 5000);
+  })();
+</script>
+{% endif %}
 {% endblock %}

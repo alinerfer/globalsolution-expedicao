@@ -77,6 +77,17 @@ export class OrdersController {
         )
       : [];
 
+    const temDestino =
+      pedido.latitude !== null && pedido.longitude !== null;
+    const acompanhaEntregador =
+      pedido.entregadorId !== null &&
+      [
+        OrderStatus.ATRIBUIDO,
+        OrderStatus.SAIU_PARA_ENTREGA,
+        OrderStatus.ENTREGUE,
+      ].includes(pedido.status);
+    const mostraMapa = temDestino || acompanhaEntregador;
+
     return {
       titulo: `Pedido #${pedido.id}`,
       pedido,
@@ -91,6 +102,9 @@ export class OrdersController {
       ].includes(pedido.status),
       entregadores,
       erro: erro ?? null,
+      mostraMapa,
+      acompanhaEntregador,
+      temDestino,
     };
   }
 

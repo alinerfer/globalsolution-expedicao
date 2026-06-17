@@ -65,6 +65,37 @@
   {% endfor %}
 </div>
 
+<section class="mt-6 rounded-lg bg-white p-4 shadow-sm">
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-600">
+      Entregadores no mapa
+    </h2>
+    <span id="mapaInfo" class="text-xs text-slate-500"></span>
+  </div>
+  <div
+    id="mapaEntregadores"
+    class="h-80 w-full rounded border border-slate-200"
+  ></div>
+  <p
+    id="mapaVazio"
+    class="mt-2 hidden text-center text-xs text-slate-500"
+  >
+    Nenhum entregador com posição registrada.
+  </p>
+</section>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
 <div
   id="modalAtribuir"
   class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40"
@@ -240,6 +271,78 @@
       fecharModal();
       await postarTransicao(ctx.card, ctx.transicao, { entregadorId });
     });
+  })();
+</script>
+
+<script>
+  (function () {
+    const div = document.getElementById('mapaEntregadores');
+    const info = document.getElementById('mapaInfo');
+    const vazio = document.getElementById('mapaVazio');
+
+    const mapa = L.map('mapaEntregadores').setView([-23.55, -46.63], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap',
+    }).addTo(mapa);
+
+    const markers = new Map();
+
+    async function atualizar() {
+      try {
+        const resp = await fetch('/entregadores/localizacoes');
+        if (!resp.ok) return;
+        const lista = await resp.json();
+
+        if (lista.length === 0) {
+          vazio.classList.remove('hidden');
+          info.textContent = '';
+          markers.forEach((m) => m.remove());
+          markers.clear();
+          return;
+        }
+
+        vazio.classList.add('hidden');
+
+        const idsRecebidos = new Set();
+        const pontos = [];
+        lista.forEach((e) => {
+          idsRecebidos.add(e.id);
+          const ponto = [e.latitude, e.longitude];
+          pontos.push(ponto);
+          if (markers.has(e.id)) {
+            markers.get(e.id).setLatLng(ponto);
+          } else {
+            const m = L.marker(ponto)
+              .addTo(mapa)
+              .bindPopup('<strong>' + e.nome + '</strong>');
+            markers.set(e.id, m);
+          }
+        });
+
+        markers.forEach((m, id) => {
+          if (!idsRecebidos.has(id)) {
+            m.remove();
+            markers.delete(id);
+          }
+        });
+
+        if (pontos.length > 0 && !mapa._jaCentralizou) {
+          mapa.fitBounds(pontos, { padding: [30, 30], maxZoom: 14 });
+          mapa._jaCentralizou = true;
+        }
+
+        info.textContent =
+          lista.length === 1
+            ? '1 entregador no mapa'
+            : lista.length + ' entregadores no mapa';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    atualizar();
+    setInterval(atualizar, 10000);
   })();
 </script>
 {% endblock %}

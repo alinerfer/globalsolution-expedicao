@@ -50,7 +50,17 @@ export class OrdersController {
       label: ORDER_STATUS_LABEL[status],
       pedidos: agrupado[status],
     }));
-    return { titulo: 'Pedidos', colunas };
+    const entregadoresAtivos = (
+      await this.usersService.listarPorRole(UserRole.ENTREGADOR)
+    )
+      .filter((e) => e.ativo)
+      .map((e) => ({ id: e.id, nome: e.nome }));
+    return {
+      titulo: 'Pedidos',
+      colunas,
+      entregadoresAtivos,
+      entregadoresJson: JSON.stringify(entregadoresAtivos),
+    };
   }
 
   @Get('novo')

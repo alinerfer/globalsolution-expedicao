@@ -11,7 +11,11 @@
   </a>
 </div>
 
-<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+<div
+  id="kanban"
+  class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+  data-entregadores='{{ entregadoresJson }}'
+>
   {% for coluna in colunas %}
   <div class="rounded-lg bg-white p-3 shadow-sm">
     <div class="mb-3 flex items-center justify-between">
@@ -22,11 +26,15 @@
         {{ coluna.pedidos.size }}
       </span>
     </div>
-    <div class="space-y-2">
+    <div
+      class="coluna space-y-2 min-h-[40px]"
+      data-status="{{ coluna.status }}"
+    >
       {% for pedido in coluna.pedidos %}
-      <a
-        href="/pedidos/{{ pedido.id }}"
-        class="block rounded border border-slate-200 bg-slate-50 p-3 hover:border-slate-400 hover:bg-white"
+      <div
+        class="card rounded border border-slate-200 bg-slate-50 p-3 cursor-grab"
+        data-id="{{ pedido.id }}"
+        data-status="{{ coluna.status }}"
       >
         <div class="flex items-center justify-between text-xs text-slate-500">
           <span>#{{ pedido.id }}</span>
@@ -40,9 +48,15 @@
           Entregador: {{ pedido.entregador.nome }}
         </div>
         {% endif %}
-      </a>
+        <a
+          href="/pedidos/{{ pedido.id }}"
+          class="mt-2 inline-block text-xs text-slate-500 hover:underline"
+        >
+          Abrir detalhe
+        </a>
+      </div>
       {% else %}
-      <div class="rounded border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-400">
+      <div class="placeholder rounded border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-400">
         Sem pedidos
       </div>
       {% endfor %}
@@ -50,4 +64,182 @@
   </div>
   {% endfor %}
 </div>
+
+<div
+  id="modalAtribuir"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40"
+>
+  <div class="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg">
+    <h3 class="text-lg font-semibold text-slate-900">Atribuir entregador</h3>
+    <p class="mt-1 text-sm text-slate-500">
+      Pedido <span id="modalPedidoId" class="font-medium"></span>
+    </p>
+    <label for="modalSelect" class="mt-4 block text-sm font-medium text-slate-700">
+      Entregador
+    </label>
+    <select
+      id="modalSelect"
+      class="mt-1 block w-full rounded border border-slate-300 px-2 py-2 text-sm"
+    >
+      <option value="">Selecione...</option>
+    </select>
+    <div class="mt-5 flex justify-end gap-2">
+      <button
+        type="button"
+        id="modalCancelar"
+        class="rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        id="modalConfirmar"
+        class="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+      >
+        Atribuir
+      </button>
+    </div>
+  </div>
+</div>
+
+<div
+  id="flash"
+  class="pointer-events-none fixed bottom-6 right-6 z-50 hidden rounded bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"
+></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+  (function () {
+    const kanban = document.getElementById('kanban');
+    const entregadores = JSON.parse(kanban.dataset.entregadores || '[]');
+
+    const TRANSICAO = {
+      'PENDENTE>EM_PREPARO': { path: 'preparar' },
+      'EM_PREPARO>PRONTO': { path: 'pronto' },
+      'PRONTO>ATRIBUIDO': { path: 'atribuir', precisaEntregador: true },
+      'PENDENTE>CANCELADO': { path: 'cancelar', confirmar: true },
+      'EM_PREPARO>CANCELADO': { path: 'cancelar', confirmar: true },
+      'PRONTO>CANCELADO': { path: 'cancelar', confirmar: true },
+    };
+
+    const colunas = kanban.querySelectorAll('.coluna');
+    colunas.forEach((coluna) => {
+      new Sortable(coluna, {
+        group: 'pedidos',
+        animation: 150,
+        filter: '.placeholder',
+        onEnd: (evt) => onSolto(evt),
+      });
+    });
+
+    function mostrarFlash(texto) {
+      const el = document.getElementById('flash');
+      el.textContent = texto;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 2500);
+    }
+
+    function reverter(evt) {
+      evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex] || null);
+    }
+
+    async function postarTransicao(card, transicao, extras) {
+      const id = card.dataset.id;
+      const body = new URLSearchParams(extras || {});
+      const resp = await fetch('/pedidos/' + id + '/' + transicao.path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+        redirect: 'manual',
+      });
+      const ok = resp.status === 0 || resp.ok || resp.type === 'opaqueredirect';
+      if (ok) {
+        window.location.reload();
+        return true;
+      }
+      mostrarFlash('Erro ao atualizar pedido.');
+      return false;
+    }
+
+    async function onSolto(evt) {
+      if (evt.from === evt.to) {
+        return;
+      }
+      const card = evt.item;
+      const statusOrigem = evt.from.dataset.status;
+      const statusDestino = evt.to.dataset.status;
+      const chave = statusOrigem + '>' + statusDestino;
+      const transicao = TRANSICAO[chave];
+
+      if (!transicao) {
+        reverter(evt);
+        mostrarFlash('Transição inválida.');
+        return;
+      }
+
+      if (transicao.confirmar && !window.confirm('Cancelar este pedido?')) {
+        reverter(evt);
+        return;
+      }
+
+      if (transicao.precisaEntregador) {
+        abrirModalEntregador(card, evt, transicao);
+        return;
+      }
+
+      postarTransicao(card, transicao);
+    }
+
+    const modal = document.getElementById('modalAtribuir');
+    const modalSelect = document.getElementById('modalSelect');
+    const modalPedidoId = document.getElementById('modalPedidoId');
+    const modalCancelar = document.getElementById('modalCancelar');
+    const modalConfirmar = document.getElementById('modalConfirmar');
+    let modalContexto = null;
+
+    function abrirModalEntregador(card, evt, transicao) {
+      if (entregadores.length === 0) {
+        reverter(evt);
+        mostrarFlash('Cadastre um entregador ativo antes de atribuir.');
+        return;
+      }
+      modalSelect.innerHTML = '<option value="">Selecione...</option>';
+      entregadores.forEach((e) => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.nome;
+        modalSelect.appendChild(opt);
+      });
+      modalPedidoId.textContent = '#' + card.dataset.id;
+      modalContexto = { card, evt, transicao };
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function fecharModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modalContexto = null;
+    }
+
+    modalCancelar.addEventListener('click', () => {
+      if (modalContexto) {
+        reverter(modalContexto.evt);
+      }
+      fecharModal();
+    });
+
+    modalConfirmar.addEventListener('click', async () => {
+      if (!modalContexto) return;
+      const entregadorId = modalSelect.value;
+      if (!entregadorId) {
+        mostrarFlash('Selecione um entregador.');
+        return;
+      }
+      const ctx = modalContexto;
+      fecharModal();
+      await postarTransicao(ctx.card, ctx.transicao, { entregadorId });
+    });
+  })();
+</script>
 {% endblock %}

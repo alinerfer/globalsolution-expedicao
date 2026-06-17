@@ -1,98 +1,171 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Expedição
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Projeto da atividade substitutiva da **Global Solution**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+É uma plataforma de **controle de expedição de pedidos para restaurantes**, com
+duas partes que conversam entre si:
 
-## Description
+- Um **painel web** para o operador do restaurante criar pedidos, atribuir
+  entregadores e acompanhar tudo num kanban.
+- Uma **API REST** consumida pelo **app mobile do entregador**
+  (login, ver os pedidos atribuídos, confirmar retirada/entrega e mandar a
+  posição do GPS de tempos em tempos).
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+> O app mobile é um projeto Expo separado, em
+> <https://github.com/alinerfer/globalsolution-expedicao-app>.
 
-## Project setup
+## O que dá pra fazer
 
-```bash
-$ npm install
-```
+No painel web (`/`):
 
-## Compile and run the project
+- Login do operador.
+- Cadastrar entregadores (criar, editar, desativar).
+- Criar pedidos com vários itens, cliente, endereço e coordenadas opcionais.
+- Kanban com as colunas: **Pendente -> Em preparo -> Pronto -> Aguardando
+  retirada -> Saiu para entrega -> Entregue**.
+- Mover os cards arrastando (drag-and-drop). Para mandar pra "Aguardando
+  retirada" abre um modal pra escolher qual entregador.
+- Ver detalhe do pedido com itens, total e o mapa do destino.
+- Acompanhar a posição do entregador no mapa em tempo real (atualiza
+  sozinho a cada 5s).
+- Mapa geral abaixo do kanban com a última posição de **todos** os
+  entregadores ativos.
 
-```bash
-# development
-$ npm run start
+Na API (`/api/*`):
 
-# watch mode
-$ npm run start:dev
+- `POST /api/auth/login` — login do entregador, devolve um JWT.
+- `GET /api/orders/mine` — pedidos atribuídos ao entregador.
+- `GET /api/orders/:id` — detalhe do pedido (só se for do entregador logado).
+- `POST /api/orders/:id/pickup` — confirma retirada no restaurante.
+- `POST /api/orders/:id/deliver` — marca como entregue.
+- `POST /api/locations` — envia a posição atual (lat/lng) do entregador.
 
-# production mode
-$ npm run start:prod
-```
+## Tecnologias usadas
 
-## Run tests
+- [NestJS](https://nestjs.com) (Node.js + TypeScript)
+- [TypeORM](https://typeorm.io) + SQLite (`better-sqlite3`)
+- [LiquidJS](https://liquidjs.com) — template engine pro painel SSR (MVC)
+- [Tailwind CSS](https://tailwindcss.com) via Play CDN
+- [Leaflet](https://leafletjs.com) + tiles do OpenStreetMap (mapas)
+- [SortableJS](https://sortablejs.github.io/Sortable/) (drag-and-drop do kanban)
+- JWT (`@nestjs/jwt`) na API e `express-session` no painel
+- `bcrypt` pra senha
 
-```bash
-# unit tests
-$ npm run test
+## Como rodar
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Precisa ter o **Node 20+** instalado.
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+git clone git@github-aline:alinerfer/globalsolution-expedicao.git
+cd globalsolution-expedicao
+npm install
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Acesse <http://localhost:3000>.
 
-## Resources
+O banco de dados é um arquivo SQLite criado automaticamente em
+`data/expedicao.sqlite` na primeira execução.
 
-Check out a few resources that may come in handy when working with NestJS:
+## Primeiro login
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Quando a aplicação sobe pela primeira vez, ela cria um operador admin
+automaticamente:
 
-## Support
+- **E-mail:** `admin@expedicao.com`
+- **Senha:** `admin123`
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Use essas credenciais pra logar em <http://localhost:3000/login>.
 
-## Stay in touch
+Depois, vá em **Entregadores -> + Novo entregador** pra criar um usuário
+de entregador e usar no app/na API.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Como testar o fluxo inteiro
 
-## License
+1. Logue como admin.
+2. Crie um entregador (ex.: `pedro@expedicao.com` / `senha123`).
+3. Crie um pedido com 1 ou 2 itens.
+4. No kanban, arraste o card pra **Em preparo**, depois pra **Pronto**.
+5. Arraste pra **Aguardando retirada** — abre um modal: escolha o entregador.
+6. Faça login na API como o entregador:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+   ```bash
+   curl -X POST http://localhost:3000/api/auth/login \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"pedro@expedicao.com","senha":"senha123"}'
+   ```
+
+7. Pegue o `token` da resposta e use nos demais endpoints da API
+   (`/api/orders/mine`, `/api/orders/:id/pickup`, etc.).
+
+## Estrutura do projeto
+
+```
+src/
+  auth/        login web (sessão) + login JWT da API
+    web/       SessionGuard, WebAuthController
+    api/       JwtAuthGuard, ApiAuthController
+  users/       entidade de usuários (operador + entregador) e seed do admin
+  drivers/     CRUD de entregadores (web SSR) + endpoint de localizações
+  orders/      pedidos
+    web/       OrdersController (kanban, criar, detalhe, transições)
+    api/       ApiOrdersController (mine, detalhe, pickup, deliver)
+  locations/   posição dos entregadores (entidade + service + POST /api/locations)
+  types/       extensões de tipo (sessão)
+views/         templates LiquidJS
+  layouts/     layout base
+  drivers/     telas de entregadores
+  orders/      telas de pedidos (kanban, form, detail)
+data/          arquivo SQLite (gerado em runtime, ignorado pelo git)
+```
+
+## Scripts úteis
+
+```bash
+npm run start:dev    # roda em modo dev com watch
+npm run start        # roda uma vez
+npm run build        # compila para dist/
+npm test             # roda os testes do jest
+npm run lint         # roda o eslint
+```
+
+## Variáveis de ambiente
+
+Tudo tem valor padrão, então pra dev local você não precisa configurar nada.
+Pra produção, vale a pena setar:
+
+| Variável         | O que faz                                 | Padrão                |
+| ---------------- | ----------------------------------------- | --------------------- |
+| `PORT`           | Porta que o servidor escuta               | `3000`                |
+| `DATABASE_PATH`  | Caminho do arquivo SQLite                 | `data/expedicao.sqlite` |
+| `SESSION_SECRET` | Segredo da sessão do painel               | `segredo`             |
+| `JWT_SECRET`     | Segredo dos tokens JWT da API             | `segredo`             |
+
+## Status do pedido
+
+O ciclo de vida do pedido é:
+
+```
+PENDENTE
+  -> EM_PREPARO
+  -> PRONTO
+  -> ATRIBUIDO          (operador atribui um entregador)
+  -> SAIU_PARA_ENTREGA  (entregador faz pickup no app)
+  -> ENTREGUE           (entregador marca como entregue no app)
+```
+
+Cancelar é possível enquanto o pedido ainda não saiu para entrega
+(Pendente, Em preparo ou Pronto) -> `CANCELADO`.
+
+## Sobre o app do entregador
+
+O app mobile foi feito com **Expo** e fica num repositório separado:
+
+<https://github.com/alinerfer/globalsolution-expedicao-app>
+
+Ele consome a API REST deste projeto (`/api/*`). Os endpoints disponíveis
+estão listados na seção "O que dá pra fazer" acima.
+
+## Autora
+
+Aline Rocha Fernandes – RM560937

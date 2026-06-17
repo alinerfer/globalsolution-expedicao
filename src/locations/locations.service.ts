@@ -29,4 +29,17 @@ export class LocationsService {
       order: { recordedAt: 'DESC' },
     });
   }
+
+  async ultimasDosDrivers(
+    driverIds: number[],
+  ): Promise<Map<number, DriverLocation>> {
+    const mapa = new Map<number, DriverLocation>();
+    for (const id of driverIds) {
+      const ultima = await this.ultimaPorDriver(id);
+      if (ultima) {
+        mapa.set(id, ultima);
+      }
+    }
+    return mapa;
+  }
 }

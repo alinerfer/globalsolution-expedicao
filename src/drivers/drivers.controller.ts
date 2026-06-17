@@ -13,13 +13,17 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { SessionGuard } from '../auth/web/session.guard';
+import { LocationsService } from '../locations/locations.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UsersService } from '../users/users.service';
 
 @Controller('entregadores')
 @UseGuards(SessionGuard)
 export class DriversController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly locationsService: LocationsService,
+  ) {}
 
   @Get()
   @Render('drivers/list')
@@ -36,6 +40,30 @@ export class DriversController {
       criado: criado === '1',
       atualizado: atualizado === '1',
     };
+  }
+
+  @Get('localizacoes')
+  async localizacoes() {
+    const entregadores = (
+      await this.usersService.listarPorRole(UserRole.ENTREGADOR)
+    ).filter((e) => e.ativo);
+
+    const ultimas = await this.locationsService.ultimasDosDrivers(
+      entregadores.map((e) => e.id),
+    );
+
+    return entregadores
+      .filter((e) => ultimas.has(e.id))
+      .map((e) => {
+        const u = ultimas.get(e.id)!;
+        return {
+          id: e.id,
+          nome: e.nome,
+          latitude: u.latitude,
+          longitude: u.longitude,
+          recordedAt: u.recordedAt,
+        };
+      });
   }
 
   @Get('novo')
